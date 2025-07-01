@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Remember Users</title>
+  <style>
+    body {
+      font-family: "Helvetica Neue", sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1, h2 {
+      color: #333;
+      margin: 20px 0 10px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      width: 100%;
+      max-width: 400px;
+    }
+    li {
+      background: #fff;
+      margin: 10px 0;
+      padding: 12px 15px;
+      border-radius: 12px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.2s;
+    }
+    li:hover {
+      transform: scale(1.02);
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    .remove-btn {
+      background-color: #e74c3c;
+    }
+    .remove-btn:hover {
+      background-color: #c0392b;
+    }
+    .user-data {
+      font-size: 0.8em;
+      background: #f0f0f0;
+      border-radius: 8px;
+      padding: 6px;
+      margin-top: 5px;
+      white-space: pre-wrap;
+    }
+    .error {
+      color: #e74c3c;
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+    .add-user-form {
+      margin: 20px 0;
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    .add-user-form input {
+      margin: 5px 0;
+      padding: 8px;
+      width: 45%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .add-user-form button {
+      margin-top: 10px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Users</h1>
+  <ul id="userList"></ul>
+
+  <h2>Remembered Users</h2>
+  <ul id="rememberedUsers"></ul>
+
+  <div class="add-user-form">
+    <h3>Add Your Own User</h3>
+    <input type="text" id="customUsername" placeholder="Username" />
+    <input type="number" id="customId" placeholder="ID" />
+    <button onclick="addCustomUser()">Add & Remember</button>
+  </div>
+
+  <div id="error" class="error"></div>
+
+  <script>
+    const userList = document.getElementById("userList");
+    const rememberedUsersEl = document.getElementById("rememberedUsers");
+    const errorEl = document.getElementById("error");
+
+    let rememberedUsers = JSON.parse(localStorage.getItem("rememberedUsers")) || [];
+
+    function renderRememberedUsers() {
+      rememberedUsersEl.innerHTML = "";
+      rememberedUsers.forEach(user => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div>
+            <strong>${user.username}</strong>
+            <div class="user-data">${JSON.stringify(user, null, 2)}</div>
+          </div>
+          <button class="remove-btn">Remove</button>
+        `;
+        li.querySelector(".remove-btn").addEventListener("click", () => removeRememberedUser(user.id));
+        rememberedUsersEl.appendChild(li);
+      });
+    }
+
+    function removeRememberedUser(id) {
+      rememberedUsers = rememberedUsers.filter(u => u.id !== id);
+      localStorage.setItem("rememberedUsers", JSON.stringify(rememberedUsers));
+      renderRememberedUsers();
+    }
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch("https://jsonplaceholder.typicode.com/users");
+        const users = await res.json();
+        const firstFive = users.slice(0, 5); // show only first 5
+        firstFive.forEach(user => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <span>${user.username}</span>
+            <button>Remember</button>
+          `;
+          li.querySelector("button").addEventListener("click", () => rememberUser(user.id));
+          userList.appendChild(li);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function rememberUser(userId) {
+      errorEl.textContent = "";
+      try {
+        const res = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
+        const user = await res.json();
+        if (!user || !user.username) {
+          errorEl.textContent = "Invalid user data.";
+          return;
+        }
+        if (rememberedUsers.some(u => u.id === user.id)) {
+          errorEl.textContent = "This user is already remembered!";
+          return;
+        }
+        rememberedUsers.push(user);
+        localStorage.setItem("rememberedUsers", JSON.stringify(rememberedUsers));
+        renderRememberedUsers();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Failed to remember user.";
+      }
+    }
+
+    function addCustomUser() {
+      errorEl.textContent = "";
+      const username = document.getElementById("customUsername").value.trim();
+      const id = parseInt(document.getElementById("customId").value, 10);
+
+      if (!username || isNaN(id)) {
+        errorEl.textContent = "Please enter a valid username and numeric ID.";
+        return;
+      }
+
+      if (rememberedUsers.some(u => u.id === id)) {
+        errorEl.textContent = "This user ID is already remembered!";
+        return;
+      }
+
+      const newUser = {
+        id: id,
+        username: username,
+        addedManually: true
+      };
+
+      rememberedUsers.push(newUser);
+      localStorage.setItem("rememberedUsers", JSON.stringify(rememberedUsers));
+      renderRememberedUsers();
+
+      document.getElementById("customUsername").value = "";
+      document.getElementById("customId").value = "";
+    }
+
+    // Initialize
+    fetchUsers();
+    renderRememberedUsers();
+  </script>
+</body>
+</html>
