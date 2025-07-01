@@ -1,0 +1,167 @@
+
+
+
+
+his guide explains how a basic login system works using only HTML, JavaScript fetch(), and localStorage.
+
+
+
+
+
+What Each Element Does:
+<input> – A field where the user types their username or email.
+
+<button> – When clicked, runs the login() function.
+
+<div id="message"> – Displays errors (like invalid user or empty input).
+
+<div id="result"> – Displays a welcome message if the login is successful.
+
+2. Fetching Users from an API
+js
+Copy
+Edit
+const res = await fetch('https://jsonplaceholder.typicode.com/users');
+const users = await res.json();
+📌 Explanation:
+fetch() gets a list of 10 fake users from a public API.
+
+.json() converts the response into a JavaScript object/array.
+
+
+Guide: How This Simple Login App Works (HTML + JavaScript + Fetch + localStorage)
+This mini login app lets a user enter either a username or email. Whn” button, the app checks if the input matches one of the users from a public test API. If it finds a match, it stores that user’s data in the browser using localStorage and displays a welcome message like “hello bret...”. If no match is found, it shows an error message: “We don’t have this USerd”.
+
+Let’s walk through how each part works.
+The HTML structure is very simple. It includes one text input for the user to type in a name or email, one button to trigger the login function, and two <div> areas to show results or errors. When the user clicks the button, a JavaScript function runs and handles all the logic.
+In JavaScript, the function first gets the value from the input field and trims any extra spaces. If the input is too short (less than 3 characters), it immediately shows an error message saying the input is too short, and it stops the function from continuing.
+
+If the input is valid, the script uses fetch() to request data from https://jsonplaceholder.typicode.com/users. This URL returns a list of 10 fake user objects, each containing fields like username, email, id, and more. Once the data is received and converted to JSON, the script loops through it using .find() to search for a user where the input matches either the username or the email.
+
+
+
+
+To make the match work regardless of how the user types it (uppercase or lowercase), the code converts both the input and the user’s data to lowercase using .toLowerCase() before comparing them.
+
+If a match is found, the entire user object is saved into the browser’s localStorage. This allows the app to “remember” that user even after refreshing the page. The app then shows a success message like: hello bret....
+
+If no user is found in the data, an error message is shown: We don’t have this USerd. This exact phrase mimics the original sample message from your screenshot, even though it contains some typos — on purpose, for authenticity.
+
+Finally, all messages and outputs are placed nicely in the page using basic CSS. The input and button are centered, the message text is styled with red or green, and the whole form sits inside a card-like container.
+
+
+
+
+
+
+
+
+
+
+----------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Login</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #eee;
+    }
+
+    .box {
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      width: 220px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 15px;
+      margin-left: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    #message {
+      color: red;
+      margin-top: 15px;
+    }
+
+    #result {
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+    <input type="text" id="userInput" placeholder="Username or Email" />
+    <button onclick="login()">Log In</button>
+
+    <div id="message"></div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function login() {
+      const input = document.getElementById('userInput');
+      const value = input.value.trim().toLowerCase();
+      const message = document.getElementById('message');
+      const result = document.getElementById('result');
+
+      message.textContent = '';
+      result.textContent = '';
+
+      if (value.length < 3) {
+        message.textContent = 'Too short. Min 3 characters.';
+        return;
+      }
+
+      try {
+        const res = await fetch('https://jsonplaceholder.typicode.com/users');
+        const users = await res.json();
+
+        const found = users.find(u =>
+          u.username.toLowerCase() === value || u.email.toLowerCase() === value
+        );
+
+        if (found) {
+          localStorage.setItem('user', JSON.stringify(found));
+          result.textContent = `hello ${found.username.toLowerCase()}...`;
+        } else {
+          message.textContent = "We don;t have this USerd";
+        }
+      } catch (err) {
+        message.textContent = 'Could not connect.';
+        console.log(err);
+      }
+    }
+  </script>
+
+</body>
+</html>
